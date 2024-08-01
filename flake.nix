@@ -63,12 +63,21 @@
 			"webxr-0.0.1" = "sha256-83+Dq5GtBSC4sUgbS5MFPwq/5yBx2AKzHjInfRtCfXk=";
 		};
 	in {
-		packages.${system}.servo-crown = pkgs.callPackage ./crown.nix {
-			rustPlatform = (pkgs.makeRustPlatform {
-				cargo = rustToolchain;
-				rustc = rustToolchain;
-			});
-			inherit servo-src servo-hashes rustToolchain;
+		packages.${system} = rec {
+			servo-crown = pkgs.callPackage ./crown.nix {
+				rustPlatform = (pkgs.makeRustPlatform {
+					cargo = rustToolchain;
+					rustc = rustToolchain;
+				});
+				inherit servo-src servo-hashes rustToolchain;
+			};
+			servo-shell = pkgs.callPackage ./servo.nix {
+				rustPlatform = (pkgs.makeRustPlatform {
+					cargo = rustToolchain;
+					rustc = rustToolchain;
+				});
+				inherit servo-src servo-hashes rustToolchain servo-crown;
+			};
 		};
 	};
 }
