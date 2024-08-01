@@ -10,8 +10,6 @@
 }:
 
 rustPlatform.buildRustPackage rec {
-	__contentAddressed = true;
-
 	name = "servo";
 	version = "main";
 

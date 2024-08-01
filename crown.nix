@@ -9,8 +9,6 @@
 }:
 
 rustPlatform.buildRustPackage rec {
-	__contentAddressed = true;
-
 	name = "crown";
 	version = "main";
 
