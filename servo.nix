@@ -20,6 +20,7 @@ rustPlatform.buildRustPackage rec {
 	nativeBuildInputs = with pkgs; [
 		servo-crown
 		pkg-config
+		python3
 	];
 
 	buildInputs = with pkgs; [
