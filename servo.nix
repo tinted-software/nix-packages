@@ -26,15 +26,15 @@ rustPlatform.buildRustPackage rec {
 
 	buildInputs = with pkgs; [
 		xorg.libX11
-    xorg.libxcb
+		xorg.libxcb
 		fontconfig freetype
 		llvmPackages.libunwind
 		
-    gst_all_1.gstreamer
-    gst_all_1.gst-plugins-base
-    gst_all_1.gst-plugins-good
-    gst_all_1.gst-plugins-bad
-    gst_all_1.gst-plugins-ugly
+		gst_all_1.gstreamer
+		gst_all_1.gst-plugins-base
+		gst_all_1.gst-plugins-good
+		gst_all_1.gst-plugins-bad
+		gst_all_1.gst-plugins-ugly
 
 		eudev
 	];
