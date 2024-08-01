@@ -10,6 +10,11 @@
 			url = "github:nix-community/fenix";
 			inputs.nixpkgs.follows = "/nixpkgs";
 		};
+
+		freenginx-src = {
+			url = "github:freenginx/nginx";
+			flake = false;
+		};
 	};
 
 	nixConfig = {
@@ -21,7 +26,7 @@
 		];
 	};
 
-	outputs = { nixpkgs, fenix, ... }@inputs:
+	outputs = { nixpkgs, freenginx-src, fenix, ... }@inputs:
 	let
 		system = "x86_64-linux";
 
@@ -64,6 +69,10 @@
 		};
 	in {
 		packages.${system} = rec {
+			freenginx = pkgs.callPackage ./freenginx.nix {
+				src = freenginx-src;
+			};
+
 			servo-crown = pkgs.callPackage ./crown.nix {
 				rustPlatform = (pkgs.makeRustPlatform {
 					cargo = rustToolchain;

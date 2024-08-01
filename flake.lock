@@ -21,6 +21,22 @@
         "type": "github"
       }
     },
+    "freenginx-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1722437458,
+        "narHash": "sha256-7nkrz2gEBANbslzb+2Htfm8+EJr4EeHzGUXMiWWGIyw=",
+        "owner": "freenginx",
+        "repo": "nginx",
+        "rev": "5888358d14def3280d392750244fcc39457a592f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "freenginx",
+        "repo": "nginx",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1722478193,
@@ -40,6 +56,7 @@
     "root": {
       "inputs": {
         "fenix": "fenix",
+        "freenginx-src": "freenginx-src",
         "nixpkgs": "nixpkgs"
       }
     },
