@@ -1,0 +1,456 @@
+From 57cc46218420c37153e8ae869e6f167e9eaf307f Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Tue, 30 Jul 2024 01:47:36 +0900
+Subject: [PATCH 1/9] Update for nix
+
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ etc/shell.nix | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/etc/shell.nix b/etc/shell.nix
+index 61b5d680df3a..b9f96220bb47 100644
+--- a/etc/shell.nix
++++ b/etc/shell.nix
+@@ -10,7 +10,7 @@ with import (builtins.fetchTarball {
+   overlays = [
+     (import (builtins.fetchTarball {
+       # Bumped the channel in rust-toolchain.toml? Bump this commit too!
+-      url = "https://github.com/oxalica/rust-overlay/archive/7f0e3ef7b7fbed78e12e5100851175d28af4b7c6.tar.gz";
++      url = "https://github.com/oxalica/rust-overlay/archive/8b81b8ed00b20fd57b24adcb390bd96ea81ecd90.tar.gz";
+     }))
+   ];
+   config = {
+
+From bcdb36234b5add8496272bf2bccf9133d448d299 Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Tue, 30 Jul 2024 01:50:00 +0900
+Subject: [PATCH 2/9] Update to Rust 1.80.0
+
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ rust-toolchain.toml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rust-toolchain.toml b/rust-toolchain.toml
+index 17804f03d3ac..25c7f52f3452 100644
+--- a/rust-toolchain.toml
++++ b/rust-toolchain.toml
+@@ -1,6 +1,6 @@
+ [toolchain]
+ # Be sure to update etc/shell.nix when bumping this!
+-channel = "1.78.0"
++channel = "1.80.0"
+ 
+ components = [
+     # For support/crown
+
+From d7496f9a9b124d60cde697f10bab3e8f30040397 Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Tue, 30 Jul 2024 01:55:12 +0900
+Subject: [PATCH 3/9] Rename to BindingMode from BindingAnnotation
+
+https://github.com/rust-lang/rust/pull/124047
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/unrooted_must_root.rs | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/support/crown/src/unrooted_must_root.rs b/support/crown/src/unrooted_must_root.rs
+index 449256658bae..2264ac47838e 100644
+--- a/support/crown/src/unrooted_must_root.rs
++++ b/support/crown/src/unrooted_must_root.rs
+@@ -329,8 +329,8 @@ impl<'a, 'tcx> visit::Visitor<'tcx> for FnDefVisitor<'a, 'tcx> {
+         // are implemented, the `Unannotated` case could cause false-positives.
+         // These should be fixable by adding an explicit `ref`.
+         match pat.kind {
+-            hir::PatKind::Binding(hir::BindingAnnotation::NONE, ..) |
+-            hir::PatKind::Binding(hir::BindingAnnotation::MUT, ..) => {
++            hir::PatKind::Binding(hir::BindingMode::NONE, ..) |
++            hir::PatKind::Binding(hir::BindingMode::MUT, ..) => {
+                 let ty = cx.typeck_results().pat_ty(pat);
+                 if is_unrooted_ty(self.symbols, cx, ty, self.in_new_function) {
+                     cx.lint(
+
+From 94caabcdffe23bdaf43220ad2fd270a51850ac4e Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Tue, 30 Jul 2024 01:55:55 +0900
+Subject: [PATCH 4/9] Remove TypeVariableOriginKind
+
+https://github.com/rust-lang/rust/pull/123016
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/common.rs | 36 ++++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/support/crown/src/common.rs b/support/crown/src/common.rs
+index d0b7d652694c..1d87c3f911e6 100644
+--- a/support/crown/src/common.rs
++++ b/support/crown/src/common.rs
+@@ -6,7 +6,7 @@ use rustc_ast::Mutability;
+ use rustc_hir::def::{DefKind, Res};
+ use rustc_hir::def_id::{CrateNum, DefId, LocalDefId, LOCAL_CRATE};
+ use rustc_hir::{ImplItemRef, ItemKind, Node, OwnerId, PrimTy, TraitItemRef};
+-use rustc_infer::infer::type_variable::{TypeVariableOrigin, TypeVariableOriginKind};
++use rustc_infer::infer::type_variable::TypeVariableOrigin;
+ use rustc_infer::infer::TyCtxtInferExt;
+ use rustc_lint::LateContext;
+ use rustc_middle::ty::fast_reject::SimplifiedType;
+@@ -49,22 +49,22 @@ pub fn in_derive_expn(span: Span) -> bool {
+ 
+ #[macro_export]
+ macro_rules! symbols {
+-    ($($s: ident)+) => {
+-        #[derive(Clone)]
+-        #[allow(non_snake_case)]
+-        pub(crate) struct Symbols {
+-            $( $s: Symbol, )+
+-        }
+-
+-        impl Symbols {
+-            fn new() -> Self {
+-                Symbols {
+-                    $( $s: Symbol::intern(stringify!($s)), )+
+-                }
+-            }
+-        }
+-    }
+-}
++     ($($s: ident)+) => {
++         #[derive(Clone)]
++         #[allow(non_snake_case)]
++         pub(crate) struct Symbols {
++             $( $s: Symbol, )+
++         }
++
++         impl Symbols {
++             fn new() -> Self {
++                 Symbols {
++                     $( $s: Symbol::intern(stringify!($s)), )+
++                 }
++             }
++         }
++     }
++ }
+ 
+ /*
+ Stuff copied from clippy:
+@@ -339,7 +339,7 @@ pub fn implements_trait_with_env<'tcx>(
+     }
+     let infcx = tcx.infer_ctxt().build();
+     let orig = TypeVariableOrigin {
+-        kind: TypeVariableOriginKind::MiscVariable,
++        param_def_id: None,
+         span: DUMMY_SP,
+     };
+     let ty_params = tcx.mk_args_from_iter(
+
+From 222921617fd51cbd85068a73ec6b7af7a971626a Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Tue, 30 Jul 2024 01:57:16 +0900
+Subject: [PATCH 5/9] Remove TypeVariableOrigin
+
+https://github.com/rust-lang/rust/pull/124955
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/common.rs | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/support/crown/src/common.rs b/support/crown/src/common.rs
+index 1d87c3f911e6..49004730a63d 100644
+--- a/support/crown/src/common.rs
++++ b/support/crown/src/common.rs
+@@ -6,7 +6,6 @@ use rustc_ast::Mutability;
+ use rustc_hir::def::{DefKind, Res};
+ use rustc_hir::def_id::{CrateNum, DefId, LocalDefId, LOCAL_CRATE};
+ use rustc_hir::{ImplItemRef, ItemKind, Node, OwnerId, PrimTy, TraitItemRef};
+-use rustc_infer::infer::type_variable::TypeVariableOrigin;
+ use rustc_infer::infer::TyCtxtInferExt;
+ use rustc_lint::LateContext;
+ use rustc_middle::ty::fast_reject::SimplifiedType;
+@@ -338,14 +337,10 @@ pub fn implements_trait_with_env<'tcx>(
+         return false;
+     }
+     let infcx = tcx.infer_ctxt().build();
+-    let orig = TypeVariableOrigin {
+-        param_def_id: None,
+-        span: DUMMY_SP,
+-    };
+     let ty_params = tcx.mk_args_from_iter(
+         ty_params
+             .into_iter()
+-            .map(|arg| arg.unwrap_or_else(|| infcx.next_ty_var(orig).into())),
++            .map(|arg| arg.unwrap_or_else(|| infcx.next_ty_var(DUMMY_SP).into())),
+     );
+     infcx
+         .type_implements_trait(
+
+From 32c3f90ca85ce7b6c566ca45325d4f5f3732c12d Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Tue, 30 Jul 2024 02:00:15 +0900
+Subject: [PATCH 6/9] Remove LintDiagnostic::msg
+
+rust-lang/rust#125410
+
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/trace_in_no_trace.rs  | 28 +++++-------
+ support/crown/src/unrooted_must_root.rs | 60 +++++++++++--------------
+ 2 files changed, 38 insertions(+), 50 deletions(-)
+
+diff --git a/support/crown/src/trace_in_no_trace.rs b/support/crown/src/trace_in_no_trace.rs
+index ba3f1f33524e..42070e9b69b4 100644
+--- a/support/crown/src/trace_in_no_trace.rs
++++ b/support/crown/src/trace_in_no_trace.rs
+@@ -30,7 +30,7 @@ declare_tool_lint! {
+ 
+ const EMPTY_TRACE_IN_NO_TRACE_MSG: &str =
+     "must_not_have_traceable marked wrapper is not needed for types that implements \
+-empty Traceable (like primitive types). Consider removing the wrapper.";
++  empty Traceable (like primitive types). Consider removing the wrapper.";
+ 
+ pub fn register(lint_store: &mut LintStore) {
+     let symbols = Symbols::new();
+@@ -131,24 +131,18 @@ fn incorrect_no_trace<'tcx, I: Into<MultiSpan> + Copy>(
+                 {
+                     let inner = substs.type_at(pos);
+                     if inner.is_primitive_ty() {
+-                        cx.lint(
+-                            EMPTY_TRACE_IN_NO_TRACE,
+-                            EMPTY_TRACE_IN_NO_TRACE_MSG,
+-                            |lint| {
+-                                lint.span(span);
+-                            },
+-                        )
++                        cx.lint(EMPTY_TRACE_IN_NO_TRACE, |lint| {
++                            lint.primary_message(EMPTY_TRACE_IN_NO_TRACE_MSG);
++                            lint.span(span);
++                        })
+                     } else if is_jstraceable(cx, inner) {
+-                        cx.lint(
+-                            TRACE_IN_NO_TRACE,
+-                            format!(
++                        cx.lint(TRACE_IN_NO_TRACE, |lint| {
++                            lint.primary_message(format!(
+                                 "must_not_have_traceable marked wrapper must not have \
+-jsmanaged inside on {pos}-th position. Consider removing the wrapper."
+-                            ),
+-                            |lint| {
+-                                lint.span(span);
+-                            },
+-                        )
++ jsmanaged inside on {pos}-th position. Consider removing the wrapper."
++                            ));
++                            lint.span(span);
++                        })
+                     }
+                     false
+                 } else {
+diff --git a/support/crown/src/unrooted_must_root.rs b/support/crown/src/unrooted_must_root.rs
+index 2264ac47838e..e23a78bd4ae3 100644
+--- a/support/crown/src/unrooted_must_root.rs
++++ b/support/crown/src/unrooted_must_root.rs
+@@ -187,14 +187,13 @@ impl<'tcx> LateLintPass<'tcx> for UnrootedPass {
+             for field in def.fields() {
+                 let field_type = cx.tcx.type_of(field.def_id);
+                 if is_unrooted_ty(&self.symbols, cx, field_type.skip_binder(), false) {
+-                    cx.lint(
+-                        UNROOTED_MUST_ROOT,
+-                        "Type must be rooted, use #[crown::unrooted_must_root_lint::must_root] \
+-                         on the struct definition to propagate",
+-                        |lint| {
+-                            lint.span(field.span);
+-                        },
+-                    )
++                    cx.lint(UNROOTED_MUST_ROOT, |lint| {
++                          lint.primary_message(
++                              "Type must be rooted, use #[crown::unrooted_must_root_lint::must_root] \
++                               on the struct definition to propagate"
++                              );
++                          lint.span(field.span);
++                      })
+                 }
+             }
+         }
+@@ -212,15 +211,14 @@ impl<'tcx> LateLintPass<'tcx> for UnrootedPass {
+                     for field in fields {
+                         let field_type = cx.tcx.type_of(field.def_id);
+                         if is_unrooted_ty(&self.symbols, cx, field_type.skip_binder(), false) {
+-                            cx.lint(
+-                                UNROOTED_MUST_ROOT,
+-                                "Type must be rooted, \
+-                                use #[crown::unrooted_must_root_lint::must_root] \
+-                                on the enum definition to propagate",
+-                                |lint| {
+-                                    lint.span(field.ty.span);
+-                                },
+-                            )
++                            cx.lint(UNROOTED_MUST_ROOT, |lint| {
++                                lint.primary_message(
++                                    "Type must be rooted, \
++                                      use #[crown::unrooted_must_root_lint::must_root] \
++                                      on the enum definition to propagate",
++                                );
++                                lint.span(field.ty.span);
++                            })
+                         }
+                     }
+                 },
+@@ -250,7 +248,8 @@ impl<'tcx> LateLintPass<'tcx> for UnrootedPass {
+ 
+             for (arg, ty) in decl.inputs.iter().zip(sig.inputs().skip_binder().iter()) {
+                 if is_unrooted_ty(&self.symbols, cx, *ty, false) {
+-                    cx.lint(UNROOTED_MUST_ROOT, "Type must be rooted", |lint| {
++                    cx.lint(UNROOTED_MUST_ROOT, |lint| {
++                        lint.primary_message("Type must be rooted");
+                         lint.span(arg.span);
+                     })
+                 }
+@@ -259,7 +258,8 @@ impl<'tcx> LateLintPass<'tcx> for UnrootedPass {
+             if !in_new_function &&
+                 is_unrooted_ty(&self.symbols, cx, sig.output().skip_binder(), false)
+             {
+-                cx.lint(UNROOTED_MUST_ROOT, "Type must be rooted", |lint| {
++                cx.lint(UNROOTED_MUST_ROOT, |lint| {
++                    lint.primary_message("Type must be rooted");
+                     lint.span(decl.output.span());
+                 })
+             }
+@@ -289,13 +289,10 @@ impl<'a, 'tcx> visit::Visitor<'tcx> for FnDefVisitor<'a, 'tcx> {
+         let require_rooted = |cx: &LateContext, in_new_function: bool, subexpr: &hir::Expr| {
+             let ty = cx.typeck_results().expr_ty(subexpr);
+             if is_unrooted_ty(self.symbols, cx, ty, in_new_function) {
+-                cx.lint(
+-                    UNROOTED_MUST_ROOT,
+-                    format!("Expression of type {:?} must be rooted", ty),
+-                    |lint| {
+-                        lint.span(subexpr.span);
+-                    },
+-                )
++                cx.lint(UNROOTED_MUST_ROOT, |lint| {
++                    lint.primary_message(format!("Expression of type {:?} must be rooted", ty));
++                    lint.span(subexpr.span);
++                })
+             }
+         };
+ 
+@@ -333,13 +330,10 @@ impl<'a, 'tcx> visit::Visitor<'tcx> for FnDefVisitor<'a, 'tcx> {
+             hir::PatKind::Binding(hir::BindingMode::MUT, ..) => {
+                 let ty = cx.typeck_results().pat_ty(pat);
+                 if is_unrooted_ty(self.symbols, cx, ty, self.in_new_function) {
+-                    cx.lint(
+-                        UNROOTED_MUST_ROOT,
+-                        format!("Expression of type {:?} must be rooted", ty),
+-                        |lint| {
+-                            lint.span(pat.span);
+-                        },
+-                    )
++                    cx.lint(UNROOTED_MUST_ROOT, |lint| {
++                        lint.primary_message(format!("Expression of type {:?} must be rooted", ty));
++                        lint.span(pat.span);
++                    })
+                 }
+             },
+             _ => {},
+
+From 22c58edd5588c4a972e071f5eb124c7e8b83ecb8 Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Wed, 31 Jul 2024 02:07:23 +0900
+Subject: [PATCH 7/9] common.rs fmt mistake indents
+
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/common.rs | 32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/support/crown/src/common.rs b/support/crown/src/common.rs
+index 49004730a63d..7899563bbeb0 100644
+--- a/support/crown/src/common.rs
++++ b/support/crown/src/common.rs
+@@ -48,22 +48,22 @@ pub fn in_derive_expn(span: Span) -> bool {
+ 
+ #[macro_export]
+ macro_rules! symbols {
+-     ($($s: ident)+) => {
+-         #[derive(Clone)]
+-         #[allow(non_snake_case)]
+-         pub(crate) struct Symbols {
+-             $( $s: Symbol, )+
+-         }
+-
+-         impl Symbols {
+-             fn new() -> Self {
+-                 Symbols {
+-                     $( $s: Symbol::intern(stringify!($s)), )+
+-                 }
+-             }
+-         }
+-     }
+- }
++    ($($s: ident)+) => {
++        #[derive(Clone)]
++        #[allow(non_snake_case)]
++        pub(crate) struct Symbols {
++            $( $s: Symbol, )+
++        }
++
++        impl Symbols {
++            fn new() -> Self {
++                Symbols {
++                    $( $s: Symbol::intern(stringify!($s)), )+
++                }
++            }
++        }
++    }
++}
+ 
+ /*
+ Stuff copied from clippy:
+
+From 1ad263fc4aabe544b519d39fa55aeaec811dc836 Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Wed, 31 Jul 2024 02:08:13 +0900
+Subject: [PATCH 8/9] trace_in_no_trace.rs remove mistake space
+
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/trace_in_no_trace.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/support/crown/src/trace_in_no_trace.rs b/support/crown/src/trace_in_no_trace.rs
+index 42070e9b69b4..2668bccdd69a 100644
+--- a/support/crown/src/trace_in_no_trace.rs
++++ b/support/crown/src/trace_in_no_trace.rs
+@@ -30,7 +30,7 @@ declare_tool_lint! {
+ 
+ const EMPTY_TRACE_IN_NO_TRACE_MSG: &str =
+     "must_not_have_traceable marked wrapper is not needed for types that implements \
+-  empty Traceable (like primitive types). Consider removing the wrapper.";
++empty Traceable (like primitive types). Consider removing the wrapper.";
+ 
+ pub fn register(lint_store: &mut LintStore) {
+     let symbols = Symbols::new();
+
+From 0d5eafca50e8d27332af137908a5f800d5eca232 Mon Sep 17 00:00:00 2001
+From: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+Date: Wed, 31 Jul 2024 02:18:57 +0900
+Subject: [PATCH 9/9] trace_in_no_trace.rs remove mistake head space
+
+Signed-off-by: Hayashi Mikihiro <34ttrweoewiwe28@gmail.com>
+---
+ support/crown/src/trace_in_no_trace.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/support/crown/src/trace_in_no_trace.rs b/support/crown/src/trace_in_no_trace.rs
+index 2668bccdd69a..c021c8ae2450 100644
+--- a/support/crown/src/trace_in_no_trace.rs
++++ b/support/crown/src/trace_in_no_trace.rs
+@@ -139,7 +139,7 @@ fn incorrect_no_trace<'tcx, I: Into<MultiSpan> + Copy>(
+                         cx.lint(TRACE_IN_NO_TRACE, |lint| {
+                             lint.primary_message(format!(
+                                 "must_not_have_traceable marked wrapper must not have \
+- jsmanaged inside on {pos}-th position. Consider removing the wrapper."
++jsmanaged inside on {pos}-th position. Consider removing the wrapper."
+                             ));
+                             lint.span(span);
+                         })
