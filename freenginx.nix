@@ -2,8 +2,6 @@
 	pkgs,
 	src,
 }: pkgs.stdenv.mkDerivation {
-	__contentAddressed = true;
-
 	name = "freenginx";
 	version = "mainline";
 
