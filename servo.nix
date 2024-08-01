@@ -21,6 +21,7 @@ rustPlatform.buildRustPackage rec {
 		servo-crown
 		pkg-config
 		python3
+		python3Packages.mako
 	];
 
 	buildInputs = with pkgs; [
