@@ -4,46 +4,20 @@
 	# DO NOT HARD CODE SUPPORTED SYSTEMS
 
 	inputs = {
-		nixpkgs.url = "github:nixos/nixpkgs/master";
-		# TODO: use rust 1.80 without fenix, see https://github.com/NixOS/nixpkgs/issues/331429
-		fenix = {
-			url = "github:nix-community/fenix";
-			inputs.nixpkgs.follows = "/nixpkgs";
-		};
-
+		nixpkgs.url = "github:nixos/nixpkgs/pull/332153/head";
 		freenginx-src = {
 			url = "github:freenginx/nginx";
 			flake = false;
 		};
 	};
 
-	nixConfig = {
-		extra-substituters = [
-			"https://nix-community.cachix.org"
-		];
-		extra-trusted-public-keys = [
-			"nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-		];
-	};
-
 	outputs = { nixpkgs, freenginx-src, fenix, ... }@inputs:
 	let
 		system = "x86_64-linux";
 
-		rustToolchain = (fenix.packages.${system}.stable.withComponents [
-			"rust-src"
-			"rustc"
-			"rustfmt"
-			"cargo"
-			"clippy"
-			"llvm-tools-preview"
-			"rustc-dev"
-		]);
-
 		pkgs = import nixpkgs {
 			inherit system;
 			overlays = [
-				fenix.overlays.default
 			];
 		};
 		
@@ -74,18 +48,10 @@
 			};
 
 			servo-crown = pkgs.callPackage ./crown.nix {
-				rustPlatform = (pkgs.makeRustPlatform {
-					cargo = rustToolchain;
-					rustc = rustToolchain;
-				});
-				inherit servo-src servo-hashes rustToolchain;
+				inherit servo-src servo-hashes;
 			};
 			servo-shell = pkgs.callPackage ./servo.nix {
-				rustPlatform = (pkgs.makeRustPlatform {
-					cargo = rustToolchain;
-					rustc = rustToolchain;
-				});
-				inherit servo-src servo-hashes rustToolchain servo-crown;
+				inherit servo-src servo-hashes servo-crown;
 			};
 		};
 	};

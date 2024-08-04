@@ -3,7 +3,6 @@
 	lib,
 	pkgs,
 	rustPlatform,
-	rustToolchain,
 	servo-src,
 	servo-crown,
 	servo-hashes,

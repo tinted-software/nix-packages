@@ -1,9 +1,11 @@
 {
 	rust,
+	rustc,
+	cargo,
 	lib,
 	stdenv,
+	llvmPackages_18,
 	rustPlatform,
-	rustToolchain,
 	servo-src,
 	servo-hashes,
 }:
@@ -17,14 +19,15 @@ rustPlatform.buildRustPackage rec {
 	];
 
 	buildInputs = [
-		rustToolchain
+		rustc
+		llvmPackages_18.libllvm
 	];
 
 	# We need this so that librustc_driver* and libLLVM.so* can be found 🙃
 	fixupPhase = ''
 		patchelf \
 			--set-interpreter ${stdenv.cc.bintools.dynamicLinker} \
-			--set-rpath ${stdenv.cc.cc.lib}/lib:${rustToolchain}/lib:${rustToolchain}/lib/rustlib/${rust.toRustTarget stdenv.buildPlatform}/lib \
+			--set-rpath ${stdenv.cc.cc.lib}/lib:${rustc}/lib:${rustc}/lib/rustlib/${rust.toRustTarget stdenv.buildPlatform}/lib \
 			$out/bin/crown || true
 	'';
 
